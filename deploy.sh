@@ -1,12 +1,11 @@
 #!/bin/bash
 set -e
 
-REPO=/var/www/wedify-backend/repo
-PROD=/var/www/wedify/backend
+APP=/var/www/wedify-backend
 
 ENV_FILE=/var/www/wedify/.env
 if [ ! -f "$ENV_FILE" ]; then
-  echo "ERROR: $ENV_FILE not found. Create it from .env.example before deploying." >&2
+  echo "ERROR: $ENV_FILE not found." >&2
   exit 1
 fi
 set -a
@@ -15,20 +14,15 @@ source "$ENV_FILE"
 set +a
 
 echo "==> Pulling latest..."
-cd "$REPO"
+cd "$APP"
 git pull
 
 echo "==> Installing dependencies..."
-# NODE_ENV=production would skip devDeps including @nestjs/cli needed for build
+# NODE_ENV=production skips devDeps including @nestjs/cli needed for build
 NODE_ENV=development npm install --silent
 
 echo "==> Building..."
 npm run build
-
-echo "==> Staging..."
-rm -rf "$PROD/dist.bak"
-mv "$PROD/dist" "$PROD/dist.bak" 2>/dev/null || true
-cp -r "$REPO/dist" "$PROD/dist"
 
 echo "==> Restarting..."
 pm2 restart wedify-backend --update-env
