@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  firstName       String   @map("first_name")
+  lastName        String   @map("last_name")
+  phone           String?
+  role            String   @default("USER")
+  passwordHash    String?  @map("password_hash")
+  googleId        String?  @unique @map("google_id")
+  isEmailVerified Boolean  @default(false) @map("is_email_verified")
+  refreshToken    String?  @map("refresh_token")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Vendor {
+  id              String   @id @default(uuid())
+  userId          String?  @map("user_id")
+  businessName    String   @map("business_name")
+  slug            String?
+  tagline         String?
+  description     String?
+  category        String?
+  categorySlug    String?  @map("category_slug")
+  city            String?
+  citySlug        String?  @map("city_slug")
+  coverImage      String?  @map("cover_image")
+  plan            String   @default("BRONZE")
+  status          String   @default("PENDING")
+  website         String?
+  phone           String?
+  email           String?
+  whatsapp        String?
+  facebook        String?
+  instagram       String?
+  youtube         String?
+  tiktok          String?
+  videoUrl        String?  @map("video_url")
+  gallery         Json?
+  isVerified      Boolean  @default(false) @map("is_verified")
+  isFeatured      Boolean  @default(false) @map("is_featured")
+  rankScore       Float    @default(0) @map("rank_score")
+  minPrice        Decimal? @db.Decimal(10, 2) @map("min_price")
+  maxPrice        Decimal? @db.Decimal(10, 2) @map("max_price")
+  responseTime    String?  @map("response_time")
+  yearsInBusiness Int      @default(0) @map("years_in_business")
+  startingPrice   Decimal? @db.Decimal(10, 2) @map("starting_price")
+  averageRating   Float    @default(0) @map("average_rating")
+  reviewCount     Int      @default(0) @map("review_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("vendors")
+}
+
+model BlogPost {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  excerpt     String?   @db.Text
+  content     String?   @db.Text
+  coverImage  String?   @map("cover_image")
+  tags        Json?
+  authorName  String?   @map("author_name")
+  status      String    @default("DRAFT")
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("blog_posts")
+}
+
+model Booking {
+  id                 String    @id @default(uuid())
+  coupleId           String    @map("couple_id")
+  vendorId           String    @map("vendor_id")
+  serviceId          String?   @map("service_id")
+  status             String    @default("PENDING")
+  weddingDate        DateTime  @db.Date @map("wedding_date")
+  guestCount         Int?      @map("guest_count")
+  notes              String?   @db.Text
+  totalAmount        Decimal?  @db.Decimal(10, 2) @map("total_amount")
+  depositAmount      Decimal?  @db.Decimal(10, 2) @map("deposit_amount")
+  cancellationReason String?   @db.Text @map("cancellation_reason")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@map("bookings")
+}
+
+model Review {
+  id                  String    @id @default(uuid())
+  vendorId            String    @map("vendor_id")
+  coupleId            String    @map("couple_id")
+  bookingId           String?   @map("booking_id")
+  overallRating       Int       @map("overall_rating")
+  communicationRating Int?      @map("communication_rating")
+  valueRating         Int?      @map("value_rating")
+  comment             String    @db.Text
+  status              String    @default("PENDING")
+  vendorReply         String?   @db.Text @map("vendor_reply")
+  moderationNote      String?   @db.Text @map("moderation_note")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  @@map("reviews")
+}
