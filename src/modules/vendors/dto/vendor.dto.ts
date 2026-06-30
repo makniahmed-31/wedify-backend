@@ -35,9 +35,9 @@ export class CreateVendorProfileDto {
   @IsString()
   businessName: string;
 
-  @ApiProperty({ enum: VendorCategory })
-  @IsEnum(VendorCategory)
-  category: VendorCategory;
+  @ApiProperty()
+  @IsString()
+  category: string;
 
   @ApiProperty()
   @IsString()
