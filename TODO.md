@@ -20,10 +20,6 @@
 
 ## HIGH
 
-- [x] **[auth] Implement email verification**
-      `src/modules/auth/auth.service.ts:108`
-      `verifyEmail()` is an empty stub. Users register with unverified emails. Implement token generation, email dispatch, and DB flag update.
-
 - [ ] **[auth] Implement forgot/reset password**
       `src/modules/auth/auth.service.ts:112-117`
       Both `forgotPassword()` and `resetPassword()` are empty stubs returning void.

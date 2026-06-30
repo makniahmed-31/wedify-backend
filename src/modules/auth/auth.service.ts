@@ -2,8 +2,6 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  BadRequestException,
-  Logger,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
@@ -16,18 +14,14 @@ import {
   UserRole,
 } from "./dto/auth.dto";
 import { UsersService } from "../users/users.service";
-import { MailerService } from "../../common/mailer/mailer.service";
 import { User } from "@prisma/client";
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly config: ConfigService,
-    private readonly mailer: MailerService,
   ) {}
 
   generateExchangeCode(tokens: AuthResponseDto): string {
@@ -67,8 +61,6 @@ export class AuthService {
       role: dto.role ?? UserRole.USER,
       isEmailVerified: false,
     });
-
-    await this.sendVerificationEmail(user);
 
     return this.issueAndStoreTokens(user);
   }
@@ -137,57 +129,11 @@ export class AuthService {
     return this.issueAndStoreTokens(user);
   }
 
-  async verifyEmail(token: string): Promise<void> {
-    let payload: { sub: string; type: string };
-    try {
-      payload = this.jwtService.verify(token) as {
-        sub: string;
-        type: string;
-      };
-    } catch {
-      throw new BadRequestException("Invalid or expired verification token");
-    }
+  async verifyEmail(_token: string): Promise<void> {}
 
-    if (payload.type !== "email-verification") {
-      throw new BadRequestException("Invalid token type");
-    }
+  async forgotPassword(_email: string): Promise<void> {}
 
-    const user = await this.usersService.findOne(payload.sub);
-    if (user.isEmailVerified) return;
-
-    await this.usersService.update(user.id, { isEmailVerified: true });
-  }
-
-  async forgotPassword(_email: string): Promise<void> {
-    // TODO: implement forgot password
-  }
-
-  async resetPassword(_token: string, _newPassword: string): Promise<void> {
-    // TODO: implement reset password
-  }
-
-  private async sendVerificationEmail(user: User): Promise<void> {
-    const token = this.jwtService.sign(
-      { sub: user.id, type: "email-verification" },
-      { expiresIn: "24h" },
-    );
-    const appUrl = this.config.get<string>(
-      "NEXT_PUBLIC_APP_URL",
-      "http://localhost:3000",
-    );
-    const link = `${appUrl}/auth/verify-email?token=${token}`;
-
-    this.logger.log(`Verification link for ${user.email}: ${link}`);
-
-    await this.mailer.sendMail(
-      user.email,
-      "Vérifiez votre adresse e-mail — Wedify",
-      `<p>Bonjour ${user.firstName},</p>
-<p>Cliquez sur le lien ci-dessous pour vérifier votre adresse e-mail. Ce lien expire dans 24 heures.</p>
-<p><a href="${link}">${link}</a></p>
-<p>Si vous n'avez pas créé de compte, ignorez cet e-mail.</p>`,
-    );
-  }
+  async resetPassword(_token: string, _newPassword: string): Promise<void> {}
 
   private async issueAndStoreTokens(user: User): Promise<AuthResponseDto> {
     const tokens = this.issueTokens(user);
