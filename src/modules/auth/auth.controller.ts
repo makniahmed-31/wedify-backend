@@ -9,6 +9,7 @@ import {
   Req,
   Res,
   UseGuards,
+  BadRequestException,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
@@ -96,18 +97,20 @@ export class AuthController {
   @ApiOperation({ summary: "Google OAuth callback" })
   async googleCallback(@Req() req: any, @Res() res: Response) {
     const tokens = await this.authService.handleGoogleUser(req.user);
+    const code = this.authService.generateExchangeCode(tokens);
     const frontendUrl = this.config.get<string>(
       "NEXT_PUBLIC_APP_URL",
       "http://localhost:3000",
     );
-    res.cookie("wedify_auth", "1", {
-      httpOnly: false,
-      maxAge: 86400000,
-      path: "/",
-      sameSite: "lax",
-    });
-    res.redirect(
-      `${frontendUrl}/auth/callback?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`,
-    );
+    res.redirect(`${frontendUrl}/auth/callback?code=${code}`);
+  }
+
+  @Public()
+  @Post("exchange")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Exchange one-time code for JWT tokens (OAuth flow)" })
+  exchange(@Body("code") code: string) {
+    if (!code) throw new BadRequestException("code is required");
+    return this.authService.exchangeCode(code);
   }
 }

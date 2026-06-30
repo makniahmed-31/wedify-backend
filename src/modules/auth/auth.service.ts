@@ -6,6 +6,7 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
+import { randomUUID } from "crypto";
 import {
   RegisterDto,
   LoginDto,
@@ -18,11 +19,31 @@ import { User } from "@prisma/client";
 
 @Injectable()
 export class AuthService {
+  private readonly pendingCodes = new Map<
+    string,
+    { tokens: AuthResponseDto; expiresAt: number }
+  >();
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly config: ConfigService,
   ) {}
+
+  generateExchangeCode(tokens: AuthResponseDto): string {
+    const code = randomUUID();
+    this.pendingCodes.set(code, { tokens, expiresAt: Date.now() + 60_000 });
+    return code;
+  }
+
+  exchangeCode(code: string): AuthResponseDto {
+    const entry = this.pendingCodes.get(code);
+    this.pendingCodes.delete(code);
+    if (!entry || Date.now() > entry.expiresAt) {
+      throw new UnauthorizedException("Invalid or expired exchange code");
+    }
+    return entry.tokens;
+  }
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
     const existing = await this.usersService.findByEmail(dto.email);
