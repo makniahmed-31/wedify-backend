@@ -20,7 +20,7 @@
 
 ## HIGH
 
-- [ ] **[auth] Implement email verification**
+- [x] **[auth] Implement email verification**
       `src/modules/auth/auth.service.ts:108`
       `verifyEmail()` is an empty stub. Users register with unverified emails. Implement token generation, email dispatch, and DB flag update.
 
