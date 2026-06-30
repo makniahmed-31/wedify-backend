@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Put,
-  Post,
   Body,
   Param,
   Query,
@@ -39,14 +38,6 @@ export class AdminController {
   @ApiOperation({ summary: "[Admin] Approve, suspend, or reactivate a vendor" })
   vendorAction(@Param("id") id: string, @Body() dto: AdminVendorActionDto) {
     return this.adminService.actionOnVendor(id, dto);
-  }
-
-  @Post("seed")
-  @ApiOperation({
-    summary: "[Admin] Seed demo vendors (skips if DB already has data)",
-  })
-  seed() {
-    return this.adminService.seed();
   }
 
   @Get("users")

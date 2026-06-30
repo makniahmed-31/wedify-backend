@@ -12,7 +12,7 @@
       `src/modules/bookings/bookings.controller.ts:73-84`
       `PUT /:id/complete` has no role/ownership check — any authenticated user can mark any booking complete. `cancel()` ignores `_userId` (`bookings.service.ts:137`). Add ownership validation in both methods.
 
-- [ ] **[admin] Guard seed() endpoint — it wipes all vendors**
+- [x] **[admin] Guard seed() endpoint — it wipes all vendors**
       `src/modules/admin/admin.service.ts:474`
       `deleteMany({})` deletes the entire vendors table. Add an environment check (`NODE_ENV !== 'production'`) and/or a required confirmation flag.
 
