@@ -15,6 +15,7 @@ set +a
 
 echo "==> Pulling latest..."
 cd "$APP"
+rm -f package-lock.json
 git pull
 
 echo "==> Installing dependencies..."
