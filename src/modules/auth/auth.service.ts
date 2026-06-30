@@ -6,7 +6,6 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
-import { randomUUID } from "crypto";
 import {
   RegisterDto,
   LoginDto,
@@ -19,11 +18,6 @@ import { User } from "@prisma/client";
 
 @Injectable()
 export class AuthService {
-  private readonly pendingCodes = new Map<
-    string,
-    { tokens: AuthResponseDto; expiresAt: number }
-  >();
-
   constructor(
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
@@ -31,18 +25,23 @@ export class AuthService {
   ) {}
 
   generateExchangeCode(tokens: AuthResponseDto): string {
-    const code = randomUUID();
-    this.pendingCodes.set(code, { tokens, expiresAt: Date.now() + 60_000 });
-    return code;
+    return this.jwtService.sign(
+      { at: tokens.accessToken, rt: tokens.refreshToken },
+      { expiresIn: "60s" },
+    );
   }
 
   exchangeCode(code: string): AuthResponseDto {
-    const entry = this.pendingCodes.get(code);
-    this.pendingCodes.delete(code);
-    if (!entry || Date.now() > entry.expiresAt) {
+    let payload: { at: string; rt: string };
+    try {
+      payload = this.jwtService.verify(code) as { at: string; rt: string };
+    } catch {
       throw new UnauthorizedException("Invalid or expired exchange code");
     }
-    return entry.tokens;
+    if (!payload.at || !payload.rt) {
+      throw new UnauthorizedException("Invalid exchange code");
+    }
+    return { accessToken: payload.at, refreshToken: payload.rt, expiresIn: 900 };
   }
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
