@@ -41,7 +41,11 @@ export class AuthService {
     if (!payload.at || !payload.rt) {
       throw new UnauthorizedException("Invalid exchange code");
     }
-    return { accessToken: payload.at, refreshToken: payload.rt, expiresIn: 900 };
+    return {
+      accessToken: payload.at,
+      refreshToken: payload.rt,
+      expiresIn: 900,
+    };
   }
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {

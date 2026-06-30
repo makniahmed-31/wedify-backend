@@ -108,7 +108,9 @@ export class AuthController {
   @Public()
   @Post("exchange")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Exchange one-time code for JWT tokens (OAuth flow)" })
+  @ApiOperation({
+    summary: "Exchange one-time code for JWT tokens (OAuth flow)",
+  })
   exchange(@Body("code") code: string) {
     if (!code) throw new BadRequestException("code is required");
     return this.authService.exchangeCode(code);
