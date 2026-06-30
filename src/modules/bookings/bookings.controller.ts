@@ -68,9 +68,11 @@ export class BookingsController {
   }
 
   @Put(":id/complete")
-  @ApiOperation({ summary: "Mark booking as completed" })
-  complete(@Param("id") id: string) {
-    return this.bookingsService.complete(id);
+  @UseGuards(RolesGuard)
+  @Roles("VENDOR")
+  @ApiOperation({ summary: "[Vendor] Mark booking as completed" })
+  complete(@CurrentUser() user: any, @Param("id") id: string) {
+    return this.bookingsService.complete(user.id, id);
   }
 
   @Put(":id/cancel")

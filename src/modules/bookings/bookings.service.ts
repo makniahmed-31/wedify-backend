@@ -119,11 +119,21 @@ export class BookingsService {
     return this.toDto(updated);
   }
 
-  async complete(bookingId: string): Promise<BookingResponseDto> {
+  async complete(
+    vendorUserId: string,
+    bookingId: string,
+  ): Promise<BookingResponseDto> {
+    const vendor = await this.prisma.vendor.findFirst({
+      where: { userId: vendorUserId },
+    });
+    if (!vendor) throw new NotFoundException("Vendor profile not found");
+
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
     });
     if (!booking) throw new NotFoundException("Booking not found");
+    if (booking.vendorId !== vendor.id)
+      throw new ForbiddenException("Not your booking");
     if (booking.status !== BookingStatus.CONFIRMED)
       throw new BadRequestException("Booking is not confirmed");
 
@@ -135,7 +145,7 @@ export class BookingsService {
   }
 
   async cancel(
-    _userId: string,
+    userId: string,
     bookingId: string,
     reason?: string,
   ): Promise<BookingResponseDto> {
@@ -143,6 +153,16 @@ export class BookingsService {
       where: { id: bookingId },
     });
     if (!booking) throw new NotFoundException("Booking not found");
+
+    const isCouple = booking.coupleId === userId;
+    if (!isCouple) {
+      const vendor = await this.prisma.vendor.findFirst({
+        where: { userId },
+      });
+      if (!vendor || vendor.id !== booking.vendorId)
+        throw new ForbiddenException("Not your booking");
+    }
+
     if (
       ![BookingStatus.PENDING, BookingStatus.CONFIRMED].includes(
         booking.status as BookingStatus,
