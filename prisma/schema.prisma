@@ -12,7 +12,7 @@ model User {
   firstName       String   @map("first_name")
   lastName        String   @map("last_name")
   phone           String?
-  role            String   @default("USER")
+  role            UserRole @default(USER)
   passwordHash    String?  @map("password_hash")
   googleId        String?  @unique @map("google_id")
   isEmailVerified Boolean  @default(false) @map("is_email_verified")
@@ -20,14 +20,17 @@ model User {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
+  bookings        Booking[] @relation("CoupleBookings")
+  reviews         Review[]  @relation("CoupleReviews")
+
   @@map("users")
 }
 
 model Vendor {
   id              String   @id @default(uuid())
-  userId          String?  @map("user_id")
+  userId          String?  @unique @map("user_id")
   businessName    String   @map("business_name")
-  slug            String?
+  slug            String?  @unique
   tagline         String?
   description     String?
   category        String?
@@ -35,8 +38,8 @@ model Vendor {
   city            String?
   citySlug        String?  @map("city_slug")
   coverImage      String?  @map("cover_image")
-  plan            String   @default("BRONZE")
-  status          String   @default("PENDING")
+  plan            VendorPlan   @default(BASIC)
+  status          VendorStatus @default(PENDING)
   website         String?
   phone           String?
   email           String?
@@ -59,6 +62,9 @@ model Vendor {
   reviewCount     Int      @default(0) @map("review_count")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+
+  bookings        Booking[]
+  reviews         Review[]
 
   @@map("vendors")
 }
@@ -85,7 +91,7 @@ model Booking {
   coupleId           String    @map("couple_id")
   vendorId           String    @map("vendor_id")
   serviceId          String?   @map("service_id")
-  status             String    @default("PENDING")
+  status             BookingStatus @default(PENDING)
   weddingDate        DateTime  @db.Date @map("wedding_date")
   guestCount         Int?      @map("guest_count")
   notes              String?   @db.Text
@@ -94,6 +100,10 @@ model Booking {
   cancellationReason String?   @db.Text @map("cancellation_reason")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  couple             User      @relation("CoupleBookings", fields: [coupleId], references: [id])
+  vendor             Vendor    @relation(fields: [vendorId], references: [id])
+  reviews            Review[]
 
   @@map("bookings")
 }
@@ -107,11 +117,47 @@ model Review {
   communicationRating Int?      @map("communication_rating")
   valueRating         Int?      @map("value_rating")
   comment             String    @db.Text
-  status              String    @default("PENDING")
+  status              ReviewStatus @default(PENDING)
   vendorReply         String?   @db.Text @map("vendor_reply")
   moderationNote      String?   @db.Text @map("moderation_note")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
+  vendor              Vendor    @relation(fields: [vendorId], references: [id])
+  couple              User      @relation("CoupleReviews", fields: [coupleId], references: [id])
+  booking             Booking?  @relation(fields: [bookingId], references: [id])
+
   @@map("reviews")
+}
+
+enum UserRole {
+  USER
+  VENDOR
+  ADMIN
+}
+
+enum VendorStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum VendorPlan {
+  BASIC
+  PRO
+  PREMIUM
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

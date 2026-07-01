@@ -28,7 +28,7 @@
       `src/modules/admin/admin.service.ts:479, 491`
       Throw `new NotImplementedException()` instead of `new Error('Not implemented')` — raw errors become unhandled 500s in production.
 
-- [ ] **[vendors] Fix uploadMedia() / getVendorStats() throwing raw Error**
+- [x] **[vendors] Fix uploadMedia() / getVendorStats() throwing raw Error**
       `src/modules/vendors/vendors.service.ts:125-131`
       Same issue — replace with `NotImplementedException`.
 
@@ -36,15 +36,15 @@
       `src/modules/payments/`
       DTO exists (`payment.dto.ts`) but there is no service, controller, or registered routes. Entire payment flow is missing.
 
-- [ ] **[schema] Add Prisma @relation directives**
+- [x] **[schema] Add Prisma @relation directives**
       `prisma/schema.prisma`
       `Booking.coupleId`, `Booking.vendorId`, `Review.vendorId`, `Review.coupleId`, `Review.bookingId` are plain `String` fields with no `@relation` — no FK constraints, no referential integrity enforced by Prisma or the DB.
 
-- [ ] **[schema] Add @unique to Vendor.userId**
+- [x] **[schema] Add @unique to Vendor.userId**
       `prisma/schema.prisma:31`
       `userId` is nullable and not unique — one user can create multiple vendor profiles.
 
-- [ ] **[schema] Add @unique to Vendor.slug**
+- [x] **[schema] Add @unique to Vendor.slug**
       `prisma/schema.prisma:33`
       `slug` is nullable and not unique — duplicate slugs break `findBySlug()`.
 
@@ -52,20 +52,20 @@
 
 ## MEDIUM
 
-- [ ] **[auth] Fix Vendor.plan default inconsistency**
+- [x] **[auth] Fix Vendor.plan default inconsistency**
       `src/modules/vendors/vendors.service.ts:30` creates with `plan: 'BASIC'`
       `prisma/schema.prisma:38` defaults to `'BRONZE'`
       Pick one and align both.
 
-- [ ] **[auth] Read JWT expiry from config in issueTokens()**
+- [x] **[auth] Read JWT expiry from config in issueTokens()**
       `src/modules/auth/auth.service.ts:129`
       `expiresIn: '15m'` is hardcoded — should read `JWT_EXPIRES_IN` from `ConfigService` (already used elsewhere in the same file).
 
-- [ ] **[admin] Fix dashboard stats returning zeros**
+- [x] **[admin] Fix dashboard stats returning zeros**
       `src/modules/admin/admin.service.ts:410-418`
       `totalUsers`, `totalBookings`, `averageSeoScore`, `pendingReviews` all return `0`. Query actual DB counts.
 
-- [ ] **[auth] Add stricter rate limiting on auth endpoints**
+- [x] **[auth] Add stricter rate limiting on auth endpoints**
       `src/app.module.ts:25`
       Global throttle is 100 req/min — insufficient to stop brute force on `/auth/login` and `/auth/register`. Apply a tighter `@Throttle()` decorator (e.g. 5/min) on those specific endpoints.
 
@@ -73,10 +73,10 @@
 
 ## LOW
 
-- [ ] **[schema] Replace plain String with Prisma enums**
+- [x] **[schema] Replace plain String with Prisma enums**
       `prisma/schema.prisma`
       `User.role`, `Vendor.status`, `Vendor.plan`, `Booking.status`, `Review.status` are all plain `String`. Define Prisma `enum` types for DB-level enforcement and type safety.
 
-- [ ] **[env] Verify Google OAuth credentials not committed to git**
+- [x] **[env] Verify Google OAuth credentials not committed to git**
       `.env:20-21`
       Real `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are present. Confirm `.env` is in `.gitignore` and rotate credentials if they were ever committed.

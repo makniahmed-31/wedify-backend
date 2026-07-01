@@ -21,6 +21,7 @@ import { VendorsService } from "./vendors.service";
 import {
   CreateVendorProfileDto,
   UpdateVendorProfileDto,
+  VendorStatus,
 } from "./dto/vendor.dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -111,7 +112,7 @@ export class VendorsController {
   @Roles("ADMIN")
   @Put(":id/status")
   @ApiOperation({ summary: "[Admin] Update vendor status (approve/suspend)" })
-  updateStatus(@Param("id") id: string, @Body("status") status: string) {
+  updateStatus(@Param("id") id: string, @Body("status") status: VendorStatus) {
     return this.vendorsService.updateStatus(id, status);
   }
 }

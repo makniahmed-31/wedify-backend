@@ -144,7 +144,9 @@ export class AuthService {
 
   private issueTokens(user: User): AuthResponseDto {
     const payload = { sub: user.id, email: user.email, role: user.role };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: "15m" });
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: this.config.get<string>("JWT_EXPIRES_IN", "15m"),
+    });
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.config.get<string>(
         "JWT_REFRESH_SECRET",

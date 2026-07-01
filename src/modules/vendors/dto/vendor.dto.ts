@@ -23,11 +23,8 @@ export enum VendorCategory {
   OFFICIANT = "OFFICIANT",
 }
 
-export enum VendorStatus {
-  PENDING = "PENDING",
-  ACTIVE = "ACTIVE",
-  SUSPENDED = "SUSPENDED",
-}
+import { VendorStatus } from "@prisma/client";
+export { VendorStatus };
 
 export class CreateVendorProfileDto {
   @ApiProperty()

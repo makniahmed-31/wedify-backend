@@ -12,6 +12,7 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 import { AuthGuard } from "@nestjs/passport";
 import { Response } from "express";
 import { ConfigService } from "@nestjs/config";
@@ -31,6 +32,7 @@ export class AuthController {
 
   @Public()
   @Post("register")
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: "Register a new user" })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -39,6 +41,7 @@ export class AuthController {
   @Public()
   @Post("login")
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: "Login and receive JWT tokens" })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
@@ -69,6 +72,7 @@ export class AuthController {
   @Public()
   @Post("forgot-password")
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: "Request password reset email" })
   forgotPassword(@Body("email") email: string) {
     return this.authService.forgotPassword(email);

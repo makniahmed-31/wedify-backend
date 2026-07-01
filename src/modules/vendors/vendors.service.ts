@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, NotImplementedException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { Vendor } from "@prisma/client";
 import {
@@ -109,7 +109,7 @@ export class VendorsService {
 
   async updateStatus(
     vendorId: string,
-    status: string,
+    status: VendorStatus,
   ): Promise<VendorResponseDto> {
     const vendor = await this.prisma.vendor.findUnique({
       where: { id: vendorId },
@@ -123,11 +123,11 @@ export class VendorsService {
   }
 
   async uploadMedia(_vendorId: string, _userId: string, _files: unknown[]) {
-    throw new Error("Not implemented");
+    throw new NotImplementedException();
   }
 
   async getVendorStats(_vendorId: string) {
-    throw new Error("Not implemented");
+    throw new NotImplementedException();
   }
 
   async findBySlug(slug: string) {
