@@ -17,16 +17,23 @@ export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getDashboardStats(): Promise<AdminStatsDto> {
-    const [totalVendors, activeVendors, pendingVendors, all, totalUsers, totalBookings, pendingReviews] =
-      await Promise.all([
-        this.prisma.vendor.count(),
-        this.prisma.vendor.count({ where: { status: "ACTIVE" } }),
-        this.prisma.vendor.count({ where: { status: "PENDING" } }),
-        this.prisma.vendor.findMany({ select: { plan: true, status: true } }),
-        this.prisma.user.count(),
-        this.prisma.booking.count(),
-        this.prisma.review.count({ where: { status: "PENDING" } }),
-      ]);
+    const [
+      totalVendors,
+      activeVendors,
+      pendingVendors,
+      all,
+      totalUsers,
+      totalBookings,
+      pendingReviews,
+    ] = await Promise.all([
+      this.prisma.vendor.count(),
+      this.prisma.vendor.count({ where: { status: "ACTIVE" } }),
+      this.prisma.vendor.count({ where: { status: "PENDING" } }),
+      this.prisma.vendor.findMany({ select: { plan: true, status: true } }),
+      this.prisma.user.count(),
+      this.prisma.booking.count(),
+      this.prisma.review.count({ where: { status: "PENDING" } }),
+    ]);
 
     const mrr = all
       .filter((v) => v.status === "ACTIVE")
