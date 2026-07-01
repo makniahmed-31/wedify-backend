@@ -41,6 +41,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
+      - name: Wait for SSH
+        run: |
+          for i in $(seq 1 6); do
+            nc -zw 5 ${{ secrets.SSH_HOST }} ${SSH_PORT:-22} && exit 0
+            echo "Attempt $i failed, retrying in 20s..."
+            sleep 20
+          done
+          exit 1
+        env:
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -48,4 +59,6 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
+          timeout: 60s
+          command_timeout: 10m
           script: bash /var/www/wedify-backend/deploy.sh
