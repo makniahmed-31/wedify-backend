@@ -93,6 +93,7 @@ export class VendorsService {
     if (filters.city) where.citySlug = filters.city;
     if (filters.minPrice) where.minPrice = { gte: filters.minPrice };
     if (filters.maxPrice) where.maxPrice = { lte: filters.maxPrice };
+    if (filters.featured === "true") where.isFeatured = true;
 
     const [data, total] = await Promise.all([
       this.prisma.vendor.findMany({

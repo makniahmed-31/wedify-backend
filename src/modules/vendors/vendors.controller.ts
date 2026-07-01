@@ -42,11 +42,12 @@ export class VendorsController {
     @Query("city") city?: string,
     @Query("minPrice") minPrice?: number,
     @Query("maxPrice") maxPrice?: number,
+    @Query("featured") featured?: string,
     @Query("page") page = 1,
     @Query("limit") limit = 20,
   ) {
     return this.vendorsService.findAll(
-      { category, city, minPrice, maxPrice },
+      { category, city, minPrice, maxPrice, featured },
       page,
       limit,
     );
