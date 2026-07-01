@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotImplementedException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import {
   AdminVendorActionDto,
@@ -94,18 +94,18 @@ export class AdminService {
   }
 
   async listUsers(_query: AdminQueryDto) {
-    throw new Error("Not implemented");
+    throw new NotImplementedException();
   }
 
   async banUser(_userId: string, _reason: string): Promise<void> {}
 
   async listBookings(_query: AdminQueryDto) {
-    throw new Error("Not implemented");
+    throw new NotImplementedException();
   }
 
   async processRefund(_bookingId: string, _amount?: number): Promise<void> {}
 
   async getAuditLog(_query: AdminQueryDto) {
-    throw new Error("Not implemented");
+    throw new NotImplementedException();
   }
 }

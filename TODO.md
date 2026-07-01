@@ -20,11 +20,11 @@
 
 ## HIGH
 
-- [ ] **[auth] Implement forgot/reset password**
-      `src/modules/auth/auth.service.ts:112-117`
-      Both `forgotPassword()` and `resetPassword()` are empty stubs returning void.
+- [-] **[auth] Implement forgot/reset password**
+  `src/modules/auth/auth.service.ts:112-117`
+  Both `forgotPassword()` and `resetPassword()` are empty stubs returning void.
 
-- [ ] **[admin] Fix listUsers() / getAuditLog() throwing raw Error**
+- [x] **[admin] Fix listUsers() / getAuditLog() throwing raw Error**
       `src/modules/admin/admin.service.ts:479, 491`
       Throw `new NotImplementedException()` instead of `new Error('Not implemented')` — raw errors become unhandled 500s in production.
 
