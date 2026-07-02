@@ -40,15 +40,18 @@ export class AuthController {
     private readonly config: ConfigService,
   ) {}
 
-  private get isProd(): boolean {
-    return this.config.get<string>("NODE_ENV") === "production";
+  private get cookieSecure(): boolean {
+    // Explicit opt-in: set COOKIE_SECURE=true in .env only when the site runs on HTTPS.
+    // NODE_ENV=production alone is not sufficient — Secure cookies are silently dropped
+    // by the browser over plain HTTP, breaking the entire auth flow.
+    return this.config.get<string>("COOKIE_SECURE") === "true";
   }
 
   private setAuthCookies(res: Response, tokens: AuthResponseDto): void {
     const base = {
       httpOnly: true,
       sameSite: "strict" as const,
-      secure: this.isProd,
+      secure: this.cookieSecure,
     };
     res.cookie("wedify_token", tokens.accessToken, {
       ...base,
