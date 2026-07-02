@@ -14,13 +14,23 @@ import {
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import { AuthGuard } from "@nestjs/passport";
-import { Response } from "express";
+import { Response, Request } from "express";
 import { ConfigService } from "@nestjs/config";
 import { AuthService } from "./auth.service";
-import { RegisterDto, LoginDto, RefreshTokenDto } from "./dto/auth.dto";
+import {
+  RegisterDto,
+  LoginDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  AuthResponseDto,
+  SessionDto,
+} from "./dto/auth.dto";
 import { Public } from "../../common/decorators/public.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { User } from "@prisma/client";
+
+const ACCESS_TOKEN_TTL_MS = 15 * 60 * 1000;
+const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 @ApiTags("auth")
 @Controller("auth")
@@ -30,36 +40,89 @@ export class AuthController {
     private readonly config: ConfigService,
   ) {}
 
+  private get isProd(): boolean {
+    return this.config.get<string>("NODE_ENV") === "production";
+  }
+
+  private setAuthCookies(res: Response, tokens: AuthResponseDto): void {
+    const base = {
+      httpOnly: true,
+      sameSite: "strict" as const,
+      secure: this.isProd,
+    };
+    res.cookie("wedify_token", tokens.accessToken, {
+      ...base,
+      maxAge: ACCESS_TOKEN_TTL_MS,
+      path: "/",
+    });
+    res.cookie("wedify_refresh", tokens.refreshToken, {
+      ...base,
+      maxAge: REFRESH_TOKEN_TTL_MS,
+      path: "/api/v1/auth/refresh",
+    });
+  }
+
+  private clearAuthCookies(res: Response): void {
+    res.clearCookie("wedify_token", { path: "/" });
+    res.clearCookie("wedify_refresh", { path: "/api/v1/auth/refresh" });
+  }
+
   @Public()
   @Post("register")
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: "Register a new user" })
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<SessionDto> {
+    const tokens = await this.authService.register(dto);
+    this.setAuthCookies(res, tokens);
+    return { role: tokens.role };
   }
 
   @Public()
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @ApiOperation({ summary: "Login and receive JWT tokens" })
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  @ApiOperation({
+    summary: "Login and receive JWT tokens via httpOnly cookies",
+  })
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<SessionDto> {
+    const tokens = await this.authService.login(dto);
+    this.setAuthCookies(res, tokens);
+    return { role: tokens.role };
   }
 
   @Public()
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Refresh access token" })
-  refresh(@Body() dto: RefreshTokenDto) {
-    return this.authService.refresh(dto);
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @ApiOperation({
+    summary: "Refresh access token using httpOnly refresh cookie",
+  })
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<SessionDto> {
+    const refreshToken = req.cookies["wedify_refresh"] as string | undefined;
+    if (!refreshToken) throw new BadRequestException("No refresh token");
+    const tokens = await this.authService.refresh({ refreshToken });
+    this.setAuthCookies(res, tokens);
+    return { role: tokens.role };
   }
 
   @Post("logout")
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: "Logout and invalidate refresh token" })
-  logout(@CurrentUser() user: User) {
-    return this.authService.logout(user.id);
+  @ApiOperation({ summary: "Logout, revoke refresh token, and clear cookies" })
+  async logout(
+    @CurrentUser() user: User,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    await this.authService.logout(user.id);
+    this.clearAuthCookies(res);
   }
 
   @Public()
@@ -74,19 +137,16 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: "Request password reset email" })
-  forgotPassword(@Body("email") email: string) {
-    return this.authService.forgotPassword(email);
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
   }
 
   @Public()
   @Post("reset-password")
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: "Reset password using token" })
-  resetPassword(
-    @Body("token") token: string,
-    @Body("password") password: string,
-  ) {
-    return this.authService.resetPassword(token, password);
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 
   @Public()
@@ -112,11 +172,15 @@ export class AuthController {
   @Public()
   @Post("exchange")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: "Exchange one-time code for JWT tokens (OAuth flow)",
-  })
-  exchange(@Body("code") code: string) {
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @ApiOperation({ summary: "Exchange one-time OAuth code for session cookies" })
+  async exchange(
+    @Body("code") code: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<SessionDto> {
     if (!code) throw new BadRequestException("code is required");
-    return this.authService.exchangeCode(code);
+    const tokens = this.authService.exchangeCode(code);
+    this.setAuthCookies(res, tokens);
+    return { role: tokens.role };
   }
 }

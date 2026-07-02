@@ -26,15 +26,19 @@ export class AuthService {
 
   generateExchangeCode(tokens: AuthResponseDto): string {
     return this.jwtService.sign(
-      { at: tokens.accessToken, rt: tokens.refreshToken },
+      { at: tokens.accessToken, rt: tokens.refreshToken, role: tokens.role },
       { expiresIn: "60s" },
     );
   }
 
   exchangeCode(code: string): AuthResponseDto {
-    let payload: { at: string; rt: string };
+    let payload: { at: string; rt: string; role: UserRole };
     try {
-      payload = this.jwtService.verify(code) as { at: string; rt: string };
+      payload = this.jwtService.verify(code) as {
+        at: string;
+        rt: string;
+        role: UserRole;
+      };
     } catch {
       throw new UnauthorizedException("Invalid or expired exchange code");
     }
@@ -44,6 +48,7 @@ export class AuthService {
     return {
       accessToken: payload.at,
       refreshToken: payload.rt,
+      role: payload.role,
       expiresIn: 900,
     };
   }
@@ -77,14 +82,11 @@ export class AuthService {
   }
 
   async refresh(dto: RefreshTokenDto): Promise<AuthResponseDto> {
-    let payload: any;
+    let payload: { sub: string; email: string; role: string };
     try {
       payload = this.jwtService.verify(dto.refreshToken, {
-        secret: this.config.get<string>(
-          "JWT_REFRESH_SECRET",
-          "wedify-refresh-secret",
-        ),
-      });
+        secret: this.config.getOrThrow<string>("JWT_REFRESH_SECRET"),
+      }) as { sub: string; email: string; role: string };
     } catch {
       throw new UnauthorizedException("Invalid refresh token");
     }
@@ -144,16 +146,19 @@ export class AuthService {
 
   private issueTokens(user: User): AuthResponseDto {
     const payload = { sub: user.id, email: user.email, role: user.role };
+    const jwtExpiresIn = this.config.get<string>("JWT_EXPIRES_IN", "15m");
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: this.config.get<string>("JWT_EXPIRES_IN", "15m"),
+      expiresIn: jwtExpiresIn,
     });
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.config.get<string>(
-        "JWT_REFRESH_SECRET",
-        "wedify-refresh-secret",
-      ),
+      secret: this.config.getOrThrow<string>("JWT_REFRESH_SECRET"),
       expiresIn: "7d",
     });
-    return { accessToken, refreshToken, expiresIn: 900 };
+    return {
+      accessToken,
+      refreshToken,
+      role: user.role as UserRole,
+      expiresIn: 900,
+    };
   }
 }
