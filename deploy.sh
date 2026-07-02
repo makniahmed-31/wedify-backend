@@ -22,6 +22,9 @@ echo "==> Installing dependencies..."
 # NODE_ENV=production skips devDeps including @nestjs/cli needed for build
 NODE_ENV=development npm install --silent
 
+echo "==> Running migrations..."
+npx prisma migrate deploy
+
 echo "==> Building..."
 npm run build
 
